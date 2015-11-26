@@ -1,0 +1,64 @@
+---
+title: "TEXT1"
+author: "kimsungguen"
+date: "2015년 11월 26일"
+output: html_document
+---
+
+## 박근혜 시정연설 분석
+###http://www.vop.co.kr/A00000699765.html
+
+
+  - 워크폴더 설정 및 데이터 import
+```{R}  
+library(KoNLP)
+library(wordcloud)
+setwd("C:/Users/user/Desktop/text_mining")
+txt<-readLines("park.txt")
+head(txt)
+```
+
+  - 문장에서 명사만 뽑아내고 리스트를 벡터로 변환
+```{R}
+park_keyword<-sapply(txt,extractNoun,USE.NAMES=F)
+park_keyword<-unlist(park_keyword)
+head(park_keyword)
+```
+
+  - 불필요한 단어, 문자, 숫자 등 제거
+```{R}
+park<-park_keyword[nchar(park_keyword)>=2]
+park<-gsub("\\.","",park)
+park<-gsub("\\n","",park)
+park<-gsub("\\d+","",park)
+head(park)
+```
+
+  - 공백 없애기 위해 저장하였다가 다시 불러옴
+```{r}
+write(park,"park.txt")
+park<-read.table("park.txt")
+```
+
+
+  - 상위 20개 단어 확인
+```{r}
+wordcount<-table(park)
+head(sort(wordcount,decreasing = T),20)
+```
+
+  - 워드클라우드 출력
+```{r}
+library(RColorBrewer)
+
+palete<-brewer.pal(9,"Set1")
+
+wordcloud(names(wordcount), 
+          freq=wordcount, 
+          scale=c(5,0.5), 
+          rot.per=0.25,
+          min.freq=2, 
+          random.order=F, 
+          random.color=T, 
+          colors=palete)
+```
