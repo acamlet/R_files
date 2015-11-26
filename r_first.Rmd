@@ -1,0 +1,323 @@
+---
+title: R 기초 익히기
+author: "ksg"
+date: 2015.11.24
+output: html_document
+---
+
+## R기초익히기
+### R의 편리한 기능들
+  - 스크립트 내용에서 crt-R / run
+  - 위아래 화살표로 앞에 입력한 코드 반복가능
+  - 도움말 기능 help(seq), ?seq, ??caret  
+  - 내장 데이터의 활용 mtcars, iris
+  - 작업 디렉토리 확인 및 지정 getwd(), setwd("d:/")
+
+
+### 1. R의 명령문
+#### 할당 명령문 : = , <-, assign 을 사용하여 객체에 원소를 할당
+```{r}
+x<-c(1,2,3,4,5,6,7,8,9,10)  
+x                           
+assign("y", c(1,2,3,4,5,6,7,8,9,10))
+y
+week = c('mon', 'tue', 'thu', 'wed', 'fri', 'sat', 'sun')
+week
+```
+
+#### 직접 명령문 : 함수, 연산자 등을 사용해 명령 실행 
+```{r}
+25*3/13
+print ("hello world")
+```
+
+#### 참조문 : 코드에 대한 설명을 작성
+```{r}
+x = c(1, 2, 3) #해시를 사용하여 참조, 주석 사용
+```
+
+#### 함수와 인수
+  - 함수-특정 기능을 수행하는 명령문
+  - 인수-함수의 기능을 세밀하게 조정하는 옵션
+  - 표현형태-함수, 인수
+```{r}
+x<-c(1,2,3,4,5,6,7,8,9,10)
+y<-c(1,2,3,4,5,6,7,8,9,10)
+cor(x,y, method="pearson") 
+plot(x,y) 
+```  
+   
+### 2. R의 객체의 유형과 클래스
+
+객체의 속성
+  - 유형(mode) : 객체가 포함하고 있는 데이터의 최소단위(수치형, 논리형, 복소수형, 문자형)
+  - 특수형태 : NA(not available),NaN(not a number),Null(없음),Inf(무한대)
+  - 객체의 길이 : length()함수로 확인
+```{r}
+mode(5+4)
+mode(5>4)
+mode(2+5i)
+mode("study")
+x<-c(1,2,3,4,NA)
+is.na(x)
+length(x)
+```    
+  
+  - 클래스(class) : 데이터들의 배열혈태, 차원, 표현식에 따라 또다른 객체의 속성
+```{r}
+my.mat<-matrix(1:4, ncol=2) # 1~4로로 2열 행렬생성
+my.mat
+mode(my.mat)
+class(my.mat)         
+```     
+  
+### 3. R의 데이터의 형태(벡터, 팩터, 행렬, 배열, 리스트, 데이터프레임)
+#### 1) 벡터(vector)
+  -  1개이상의 원소를 갖는 1차원의 데이터
+  - 벡터를 생성할 때 seq, rep, norm 등의 함수를 사용하기도함
+```{r}
+A = c(1,2,3,4,5)
+A
+#seq(from,to,by,length.out) : 등차수열생성 함수
+A = seq(from=1,to=5,by=1)
+A
+A = seq(1,10,0.5)
+A
+```
+
+```{r}
+#rep(x,each,times,length.out) : 원소를 반복생성 하는 함수
+B = rep(c(1,2,3),each=3,time=2)
+B
+B = rep(A,each=2)
+B
+```
+  - 벡터의 원소를 추출하거나 추가 등 조작, []대괄호 연산자사용
+```{r}
+A<-seq(1,10,1)
+A
+A[c(1,2,3)]    # 1,2,3번째추출
+A[c(1:5)]      # 1~5번째 추출
+A[2]<-100      # 2번째 원소에 100 덮어쓰기
+append(A, 11, 100)
+A
+```
+
+#### 2) 팩터(factor)
+  - 1개이상의 원소를 갖는 1차원의 데이터
+  - 현상의 질이나 특성, 범주로 나눠지는 자료(순서형, 명목형)
+  - factor(x,levels,labels,ordered) / (객체,수준,수준의이름,순서형/명목형 전환)
+```{r}
+job<-c(1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1)
+job.f<-factor(job,levels=c(1,2,3), labels=c("회사원","자영업","학생")) 
+job.f
+summary(job.f)
+```
+
+#### 3) 행렬(matrix) : M행과 N열로 된 실수들의 사각형 배열(2차원배열)
+  - matrix(data,nrow,ncol,byrow,dimnames) / (데이터, 행수, 열수, F열방향입력T행방향입력, 각차원이름)
+```{r}
+matrix(c(1,2,3,4),ncol=2)
+matrix(c(1,2,3,4),ncol=2,byrow=T)
+matrix(1:4, nrow=2, dimnames=list(c("row1","row2"), c("col1", "col2")))
+```
+
+ - 행을 합쳐서 행렬만들기
+```{r}
+row1=c(1,2,3)
+row2=c(1,2,3)
+row3=c(1,2,3)
+mat = rbind(row1,row2,row3)
+```
+ 
+ - 열을 합쳐서 행렬만들기
+```{r}
+col1=c(1,2,3)
+col2=c(1,2,3)
+col3=c(1,2,3)
+mat=cbind(col1,col2,col3)
+mat
+```
+
+  - 행렬원소 조작
+```{r}
+mat[3,]  #3행 전체원소
+mat[3,3] #3행 3열의 원소
+mat[-2,] #2행 빼고 전체원소
+```
+
+#### 4) 배열 array : 3차원으로 구성된 형태의 자료
+  - array(data,dim,dimnames)
+```{r}
+asia<-array(1:18,dim=c(3,3,2),
+            dimnames=list(c("한국","중국","일본"),
+                          c("물가","행복도","인구밀도"),c("2013","2014")))
+asia
+```
+
+  - 배열조작 
+```{r}
+asia[1,,]
+asia[,-2,]
+asia[,,1]
+```
+
+#### 5) 리스트 : 길이와 성분이 다른 여러유형을 가진 데이터형태
+  - list(name=data,….)
+```{r}
+one<-"빅데이터와 R"
+two<-c("하나","둘","셋","넷","다섯")
+three <-c(1,2,3)
+list1<-list(first=one, second=two, third=three)
+list1  
+```
+  - 리스트 조작
+```{r}
+list1[[1]]    #첫번째 성분
+list1[[3]][1] #세번째 성분 첫번째 원소
+```
+  - 성분이름으로 추출
+```{r}
+list1$second    
+list1$second[3]
+```
+  - 성분추가
+```{r}
+ten = c(1,2,3,4,5,6,7,8,9,10)     #임의 자료 생성
+list1[[4]] = ten
+list1
+names(list1)[[4]] = "forth"
+list1
+```
+  - 성분삭제
+```{r}
+list1[[4]] = NULL
+list1
+```
+
+#### 6) 데이터 프레임(dataframe)
+  - 길이가 동일한 여러개의 벡터로 구성된 데이터
+  - data.frame(변수, header, row.names,stringsAsFactors, ) 
+```{r}
+id = c("철수", "영수","영희", "숙희")
+history = c(80, 60, 70, 90)
+math = c(50, 50, 50, 80)
+grade = data.frame(history, math, row.names=id)
+```
+
+  - 데이터프레임 조작(행, 열 순서)
+```{r}
+grade[1,]
+grade[,2]
+grade[[1]][1]
+grade[grade[[1]]>60, ]
+```
+  - 데이터프레임 조작(변수명)
+```{r}
+grade$history
+grade$math
+grade[grade$math>50,]
+```
+
+### 4. 내장데이터로 실습해보기
+
+```{r}
+mtcars
+# names, str, summary, attributes 함수로 데이터 이해하기
+# 일부 변수만 추출하기([], $사용)
+# 특정 조건 hp가 3사100이상인 차량만 추출
+# 일부 변수로 새로운 데이터프레임 만들기
+```
+
+### 5. 데이터 입출력
+  - setwd : 워크 디렉토리설정 
+  - txt파일 : read.table(file, header, sep, row.names, col.names, na.strings, stringAsFactors) 
+```{r}
+#워크폴더, txt파일만들기
+setwd("C:/Users/user/Desktop/GN_1")
+table = read.table("readtable.txt")
+table
+```
+
+  - csv파일 : read.csv(상기동일)
+```{r}
+setwd("C:/Users/user/Desktop/GN_1")
+csv = read.csv("csv.csv")
+csv
+str(csv)
+```
+
+```{r}
+setwd("C:/Users/user/Desktop/GN_1")
+csv = read.csv("csv.csv", header = FALSE)
+csv       #첫행도 데이터로 읽음
+```
+
+```{r}
+setwd("C:/Users/user/Desktop/GN_1")
+csv = read.csv("csv.csv", na.strings = c(NA,""))
+csv       #""->NA
+
+```
+
+```{r}
+setwd("C:/Users/user/Desktop/GN_1")
+csv = read.csv("csv.csv", stringsAsFactors = FALSE)
+str(csv)  #fact->char
+attributes(csv)  #데이터프레임
+```
+
+  - 데이터 저장하기
+```{r}
+write.table(csv, file="write.csv", row.names = T, col.names = T)  
+```
+
+### 6. 패키지활용
+  - install.packages(" ")
+  - library( )
+```{r}
+#install.package(ggplot2)
+library(ggplot2) 
+qplot(mtcars$mpg,mtcars$wt)
+```
+
+### 7. 연산자, 수학 및 통계함수
+  - 연산자
+```{r}
+6+3 ; 6-3 ; 6*3 ; 6^3 ; 6/3 ; 6%/%3 ; 6%%3
+150<200 ; 150>200
+a<-150 ; b<-200 ; a!=b ; a==b
+```
+ 
+  - 수학계산
+```{r}
+a<-c(-3,-2,-1,1,2,3)
+sum(a) #합계
+abs(a) #절대값
+sqrt(9) #제곱근
+max(a) ; min(a) #최대최소값
+range(a) #범위
+ceiling(2.75) ; trunc(2.75) ; round(2.75)
+choose(6,2) #6개중 2개 뽑는 조합
+factorial(5) #5!
+exp(1)       #지수함수
+log(exp(10)) #지수로그
+log10(1000)  #상용로그
+sin(pi/6)    #sin함수, cos(), tan()
+```
+
+
+  - 통계함수
+```{r}
+x<-c(10,9,8,7,6,5,4,3,2,1)
+y<-c(-1,3,5,-7,9,10,-2,4,5,9)
+mean(x)     #??????
+sort(x) ; sort(x, decreasing=T) #???름차???, ???림차??? ??????
+median(x)   #중앙???
+quantile(x) #???분위???
+var(x)      #분산
+sd(x)       #???준??????
+cov(x,y)    #공분???
+cor(x,y)    #???관계수
+summary(x)
+```

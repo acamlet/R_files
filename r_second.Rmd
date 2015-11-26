@@ -1,0 +1,398 @@
+---
+title: "R을 활용한 데이터분석_2"
+author: "kimsungguen"
+date: "2015년 11월 24일"
+output: html_document
+---
+
+## 1. 데이터 로딩
+  - 기본함수를 활용한데이터 핸들링
+  - 특정 그룹별로 통계량을 산출하는 방법 학습
+  - 네가지 고객그룹분류(케이블TV 마케팅 DATA)에 따른 통계량 산출
+  - NA값이 없는 클리닝이 완료된 데이터
+```{r}
+seg.df <- read.csv("http://goo.gl/qw303p")
+head(seg.df)
+str(seg.df)
+summary(seg.df)
+```
+
+##2. 그룹별 기술통계치 산출 
+  - 특정 세그먼트 데이터 및 통계량 확인
+  - 소득과 케이블Tv구독은 관련이 있을까?
+  - 무빙업 그룹의 소득
+  - 무빙업 그룹 중 서비스 가입자와 비가입자 소득평균비교
+```{r}
+seg.df$income[seg.df$Segment == "Moving up"]
+mean(seg.df$income[seg.df$Segment == "Moving up"])
+mean(seg.df$income[seg.df$Segment == "Moving up" & seg.df$subscribe == "subNo"])
+mean(seg.df$income[seg.df$Segment == "Moving up" & seg.df$subscribe == "subYes"])
+```
+
+### 2.1 by 함수
+  - 특정 변수기준으로 기술 통계량 확인
+  - by함수는 결과값을 리스트로 출력해줌
+```{r}
+by(seg.df$income, seg.df$Segment, mean)
+by(seg.df$income, list(seg.df$Segment, seg.df$subscribe), mean)
+```
+
+### 2.2 aggregate 함수
+  - aggregate 함수 사용하여 특정 변수기준으로 통계량 확인
+  - aggregate 함수는 기준이 되는 변수가 리스트여야함
+  - aggregate 함수는 결과값을 데이터프레임으로 출력해줌
+```{r}
+aggregate(seg.df$income, list(seg.df$Segment), mean)
+seg.income.mean <- aggregate(seg.df$income, list(seg.df$Segment), mean)
+seg.income.mean
+```
+
+
+  - 포뮬러 사용, 여러개의 변인을 고려한 비교를 할수 있음
+```{r}
+aggregate(income ~ Segment, data=seg.df, mean)
+aggregate(income ~ Segment + ownHome, data = seg.df, mean)
+aggregate(income ~ Segment + ownHome + subscribe, data = seg.df, mean)
+agg.data <- aggregate(income ~ Segment + ownHome, data = seg.df, mean)
+attributes(agg.data)
+```
+
+
+### 2.3 table 함수
+  - 변인 및 변인 조합에 따라 빈도수를 파악할수 있음
+```{r}
+table(seg.df$Segment, seg.df$ownHome)
+table(seg.df$kids, seg.df$Segment)
+```
+  - aggregate와 차이점  
+```{r}
+aggregate(kids ~ Segment, data=seg.df, sum)
+```
+
+
+## 3. 그룹별 통계량 시각화
+ ### 3.1 명목형 변수의 시각화
+  - 세그먼트 기준으로 서비스이용 여부 시각화
+```{r}
+library(lattice)
+histogram(~subscribe | Segment, data = seg.df)
+```
+
+```{r}
+histogram(~subscribe | Segment, 
+          data = seg.df, 
+          type="count", 
+          layout=c(4,1), 
+          col=c("burlywood", "darkolivegreen"))
+```
+
+  - 세그먼트+자가여부 기준으로 서비스이용여부 시각화
+```{r}
+histogram(~subscribe | Segment + ownHome, data=seg.df)
+```
+
+
+### 3.2 연속형(수치형)자료 시각화
+
+  - 세그먼트 기준으로 소득의 평균을 시각화
+```{r}
+seg.mean <- aggregate(income ~ Segment, data=seg.df, mean)
+
+barchart(income~Segment, 
+         data = seg.mean, 
+         col="grey")
+```
+
+  - 세그먼트별로 소득을 시각화(내부그룹=자가여부)
+```{r}
+seg.income.agg <- aggregate(income ~ Segment + ownHome, 
+                            data = seg.df, mean)
+
+barchart(income ~ Segment, 
+         data=seg.income.agg,
+         groups=ownHome, auto.key=TRUE,
+         par.setting = simpleTheme(col=terrain.colors(2)))
+```
+
+
+## 4. dplyr 패키지로 데이터 다루기
+
+### 4.1 데이터 확인
+```{r}
+library(dplyr)
+library(hflights)
+dim(hflights)
+head(hflights)
+hflights_df<-tbl_df(hflights) 
+hflights_df
+```
+
+### 4.2 dplyr패키지를 활용한 데이터 핸들링
+  - filter함수 : AND조건문은 (콤마) 또는 &, OR조건문은 |  
+  - 1,2월 데이터만 추출하기
+```{r}
+filter(hflights_df, Month==1, DayofMonth==1)
+filter(hflights_df, Month==1 | Month==2)
+```
+  
+  - arrange함수 : 데이터 정렬(내림차순은 desc인수)  
+```{r}
+arrange(hflights_df, ArrDelay, Month, Year)
+arrange(hflights_df, desc(Month))
+```
+
+  - select함수 : 데이터 컬럼추출
+  - 여러개 collumn 추출시 (,)콤마, (:)콜론,(-)마이너스활용
+  - mutate함수 : 데이터를 변이시킴
+```{r}
+select(hflights_df, Year, Month, DayOfWeek)
+select(hflights_df, Year:DayOfWeek)
+select(hflights_df, -(Year:DayOfWeek))
+```  
+  
+  - mutate함수 : 기존데이터를 활용해 새로운 컬럼 추가
+```{r}
+mutate(hflights_df, gain=ArrDelay-DepDelay, gain_per_hour=gain/(AirTime/60))
+```  
+
+  - 평균지연시간 계산 (spldf보다 간편)
+```{r}
+summarise(hflights_df, delay=mean(DepDelay, na.rm=TRUE))
+```
+
+  - group_by 함수 : 지정한 열별로 그룹화된 결과산출
+  - 비행편수 20회, 평균 비행거리 2000마일 이상인 항공사별 연착시간 계산
+```{r}
+planes<-group_by(hflights_df, TailNum)
+delay<-summarise(planes, 
+                 count=n(), 
+                 dist=mean(Distance, na.rm=TRUE), 
+                 delay=mean(ArrDelay,na.rm=TRUE))
+delay
+delay<-filter(delay, count>20, dist<2000) 
+delay
+```
+
+  - ggplot 그리기
+```{r}
+library(ggplot2)
+delayplot<-ggplot(delay, aes(dist,delay))
+delayplot2<-delayplot+geom_point(aes(size=count),alpha=1/2) 
+delayplot3<-delayplot2+geom_smooth()+scale_size_area()
+delayplot3
+```
+
+
+
+##5. 회귀분석
+  - 데이터 로딩: 놀이공원 만족도 조사 데이터
+  - 주말여부/아이숫자/거리/놀이기구/게임/대기시간/청결/전체만족도
+```{R}  
+sat.df <- read.csv("http://goo.gl/HKnl74")
+str(sat.df)
+summary(sat.df)
+```
+
+  - 데이터분포 탐색
+  - 편포된 변인(거리) 로그함
+```{R}
+pairs(sat.df)
+sat.df$logdist <- log(sat.df$distance)
+```
+
+  - 단변량 회귀분석
+```{r}
+plot(overall~rides, data=sat.df,
+     xlab="Satisfaction with Rides", 
+     ylab="Overall Satisfaction")
+
+lm1 = lm(overall ~ rides, data=sat.df)
+summary(lm1)
+lm1$coefficients
+par(mfrow=c(2,2))
+plot(lm1)
+```
+
+  - 다변량 회귀분석
+```{r}
+lm2 = lm(overall ~ rides + games + wait + clean, data=sat.df)
+summary(lm2)
+plot(lm2)
+```
+
+  - 변인들간의 상호작용을 확인하는 방법
+```{r}
+lm3 = lm(overall ~ rides*games, data=sat.df)
+summary(lm3)
+plot(lm2)
+```
+
+  - 예측
+```{r}
+test = sat.df[1:50,]
+lm3 = lm(overall ~ rides*games, data=sat.df)
+summary(lm3)
+plot(lm3)
+predict(lm3, test)
+```
+
+  - 간략한 모델의 장점 : 오버피팅 방지, 설명력
+  - 모델생성 시 인수 
+  - 전진추가(1개변인에서 시작), 후진소거(전체에서 1개씩 삭제) 방법사용
+```{r}
+lm2 = lm(overall ~ ., data=sat.df)
+summary(lm2)
+step(lm2, direction = "forward")
+step(lm2, direction = "backward")
+names(sat.df)
+```
+
+
+
+## 6. 로지스틱 회귀분석
+  - GLM은 정상분포가 아닌 변인들을 다룰 수 있다.
+  - GLM은 구매회수, 웹사이트 방문시간, yes/no와 같은 변인을 다룬다.
+  - GLM의 일반적 특징은 정규분포된 예측치로 비정규분포의 결과물을 산출
+  - 놀이공원 데이터 : 시즌티켓 구매여부가 포함된 데이터임
+  - 2가지 변인에 기초함 - 프로모션채널
+  - 마케터는 어떻게 프로모션을  고객의 구매를 촉진하는지 궁금하다.
+  - data 로딩
+```{r}
+pass.df <- read.csv("http://goo.gl/J8MH6A")
+summary(pass.df)
+str(pass.df)
+head(pass.df)
+```
+
+  - 모델생성
+  - coefficient : 0.3888
+  - p밸류 : 5.81e-08 (번들은 시즌권 판매에 유의한 영향을 미쳤음)
+
+```{r}
+pass.m1 <- glm(Pass ~ Promo, data=pass.df, family=binomial)
+summary(pass.m1)
+```
+
+  - 회귀계수에 exp함수 적용시 oods비(성공/안성공 비율)
+  - 이는 번들제공시 시즌권을 살 확률이 47%증가했음을 의미 
+```{r}
+exp(0.3888)
+```
+
+  - 채널을 넣어서 다시 GLM돌려보자
+  - 프로모션은 강하게 부정적인 기여를 한다.
+```{r}
+pass.m2 <- glm(Pass ~ Promo + Channel, data=pass.df, family=binomial)
+summary(pass.m2)
+```
+
+  - compute the odds ratios and confidence intervals
+  - 번들프로모션은 32–53 % 구매확률을 낮추는것과 관련된다.
+  - 공원에서 판매는 30~56으로 더 높아졌다.
+```{r}
+exp(coef(pass.m2))
+exp(confint(pass.m2))
+```
+  - 이를 적절한 모델이라고 할수 있는가?
+  - 번들플모션은 채널에 의해 차별적으로 영향을 미친다.
+  - 번들-이메일간에 극적인 차이를 보이므로 상호작용효과를 보자.
+```{r}
+pass.m3 <- glm(Pass ~ Promo + Channel + Promo:Channel,
+               data=pass.df, family=binomial)
+summary(pass.m3)
+```
+  - 채널과 프로모션의 상호작용은 통계적으로 유의미함
+  - mail, in-park*프로모션 상호작용은 강하게 부적인 효과
+  - odds ratios, promotion is only 2–11 % as effective through the mail and in-park channels as it is in email:
+
+## 7. 군집분석
+  - 소속집단을 알고 있는 데이터를 이용해 분류(분류분석-supervised learning)
+  - 소속집단을 모르는 데이터를 동질집단을 분류(군집분석-unsupervised learning)
+  - 데이터들의 유사성과 관련성을 근거로 군집을 형성
+  - 군집 내 유사성이 높을수록 좋고 군집간 차이가 클수록 좋음
+```{r}
+x1<-c(1,2,4,4,5)
+x2<-c(5,4,6,3,3)
+hcdata<-data.frame(x1,x2)
+hcdata
+plot(hcdata)
+```
+
+  - hcluster
+```{r}
+hcl<-hclust(dist(hcdata)^2, method='single')  
+plot(hcl, hang=-1)
+```
+
+  - Kmeans
+```{r}
+newiris <- iris
+newiris$Species <- NULL
+kc <- kmeans(newiris, 3)
+kc
+```
+
+```{r}
+table(iris$Species, kc$cluster)
+```
+
+
+## 8. 분류분석
+  - 소속집단을 알고 있는 데이터들을 바탕으로 분류알고리즘을 만듬
+  - 데이터셋을 둘로 나누어 알고리즘이 잘 작동하는지 교차검증
+```{r}
+data(iris)
+names(iris) 
+#"Sepal.Length" "Sepal.Width"  "Petal.Length" "Petal.Width"  "Species"
+table(iris$Species)
+```
+
+  - 데이터셋 생성
+```{R}
+library(caret)
+inTrain = createDataPartition(y=iris$Species,
+                              p=0.7, 
+                              list=FALSE)
+
+training = iris[inTrain,]
+testing = iris[-inTrain,]
+```
+
+  - Petal.Width, Sepal.Width 플랏 시각화 
+```{R}
+qplot(Petal.Width, Sepal.Width, 
+      colour=Species, 
+      data=training)
+```
+
+  - 모델생성
+```{R}
+modfit = train(Species~., 
+               method="rpart",
+               data=training)
+```
+
+  - 트리 시각화
+```{R}
+plot(modfit$finalModel, 
+     uniform=TRUE,
+     main="Classfication Tree")
+
+text(modfit$finalModel, 
+     use.n=TRUE, 
+     all=TRUE, 
+     cex=0.8)
+```
+
+
+  - 트리 예쁘게 시각화
+```{R}
+library(rattle)
+fancyRpartPlot(modfit$finalModel)
+```
+
+  - 테스트 데이터로 모델 검증
+```{R}  
+predict(modfit, newdata = testing)
+```
+
